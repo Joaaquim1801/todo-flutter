@@ -1,9 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:todo/features/tasks/presentation/colors/app_colors.dart';
+import 'package:todo/features/tasks/domain/entitties/task.dart';
+import 'package:todo/features/tasks/presentation/cubit/task_cubit.dart';
+import 'package:todo/features/tasks/presentation/cubit/task_states.dart';
 
-class TaskPage extends StatelessWidget {
+class TaskPage extends StatefulWidget {
   const TaskPage({super.key});
+
+  @override
+  State<TaskPage> createState() => _TaskPageState();
+}
+
+class _TaskPageState extends State<TaskPage> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -154,50 +171,94 @@ class TaskPage extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: 12),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                  decoration: BoxDecoration(
-                    color: AppColors.card,
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.mutedForeground,
-                            width: 2,
-                          ),
-                        ),
+                BlocBuilder<TaskCubit, TaskState>(
+                  builder: (context, state) {
+                    return state.when(
+                      initial: () => Text("Iniciou"),
+                      loaded: (taskList) => ListView.builder(
+                        itemCount: taskList.length,
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemBuilder: (context, index) {
+                          final task = taskList[index];
+                          return Container(
+                            margin: EdgeInsets.only(bottom: 8),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 20,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.card,
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                            child: Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    context.read<TaskCubit>().toggleTask(
+                                      task.id,
+                                    );
+                                  },
+                                  child: Container(
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      color: task.isCompleted
+                                          ? AppColors.primary
+                                          : Colors.transparent,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: task.isCompleted
+                                            ? AppColors.primary
+                                            : AppColors.mutedForeground,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: task.isCompleted
+                                        ? Icon(
+                                            Icons.check,
+                                            size: 14,
+                                            color: AppColors.primaryForeground,
+                                          )
+                                        : null,
+                                  ),
+                                ),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    task.title,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.foreground,
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.edit_outlined,
+                                  size: 18,
+                                  color: AppColors.mutedForeground,
+                                ),
+                                SizedBox(width: 8),
+                                IconButton(
+                                  onPressed: () {
+                                    context.read<TaskCubit>().deleteTask(
+                                      task.id,
+                                    );
+                                  },
+                                  icon: Icon(
+                                    Icons.delete_outlined,
+                                    color: AppColors.mutedForeground,
+                                    size: 18,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "Morning run 5km",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.foreground,
-                          ),
-                        ),
-                      ),
-                      Icon(
-                        Icons.edit_outlined,
-                        size: 18,
-                        color: AppColors.mutedForeground,
-                      ),
-                      SizedBox(width: 8),
-                      Icon(
-                        Icons.delete_outlined,
-                        size: 18,
-                        color: AppColors.mutedForeground,
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -219,6 +280,7 @@ class TaskPage extends StatelessWidget {
                     SizedBox(width: 12),
                     Expanded(
                       child: TextField(
+                        controller: _controller,
                         style: TextStyle(
                           fontSize: 14,
                           color: AppColors.mutedForeground,
@@ -235,7 +297,16 @@ class TaskPage extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        context.read<TaskCubit>().addTask(
+                          Task(
+                            DateTime.now().millisecondsSinceEpoch,
+                            _controller.text,
+                            false,
+                          ),
+                        );
+                        _controller.clear();
+                      },
                       style: IconButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         fixedSize: Size(44, 44),

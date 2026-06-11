@@ -4,4 +4,5 @@ abstract class TaskRepository {
   void addTask(Task newTask);
   void deleteTask(int id);
   List<Task> getTasks();
+  void toggleTask(int id);
 }

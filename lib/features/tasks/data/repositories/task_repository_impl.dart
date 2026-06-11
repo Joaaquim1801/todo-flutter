@@ -16,6 +16,13 @@ class TaskRepositoryImpl implements TaskRepository {
 
   @override
   List<Task> getTasks() {
-    return _tasks;
+    return List.from(_tasks);
+  }
+
+  @override
+  void toggleTask(int id) {
+    final task = _tasks.firstWhere((task) => task.id == id);
+    Task newTask = Task(task.id, task.title, !task.isCompleted);
+    _tasks[_tasks.indexOf(task)] = newTask;
   }
 }

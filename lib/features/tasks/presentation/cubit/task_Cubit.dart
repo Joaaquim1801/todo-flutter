@@ -21,4 +21,9 @@ class TaskCubit extends Cubit<TaskState> {
   void getTasks() {
     emit(TaskState.loaded(_taskRepository.getTasks()));
   }
+
+  void toggleTask(int id) {
+    _taskRepository.toggleTask(id);
+    emit(TaskState.loaded(_taskRepository.getTasks()));
+  }
 }
